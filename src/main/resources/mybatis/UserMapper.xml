@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.mapper.UserMapper">
+    <resultMap id="BaseResultMap" type="org.example.entity.User">
+        <constructor>
+            <idArg column="userID" javaType="_long" jdbcType="BIGINT" />
+            <arg column="username" javaType="java.lang.String" jdbcType="VARCHAR" />
+            <arg column="nickname" javaType="java.lang.String" jdbcType="VARCHAR" />
+            <arg column="role" javaType="java.lang.String" jdbcType="VARCHAR" />
+            <arg column="create_time" javaType="java.util.Date" jdbcType="TIMESTAMP" />
+        </constructor>
+    </resultMap>
+    <sql id="Base_Column_List">
+        userID, username, nickname, md5_password, role, create_time
+    </sql>
+
+    <select id="select" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM user
+        <where>
+            deleted = 0
+            <if test="userID != 0">AND userID = #{userID, jdbcType=BIGINT}</if>
+            <if test="username != null">AND BINARY username = #{username, jdbcType=VARCHAR}</if>
+            <if test="nickname != null">AND nickname = #{nickname, jdbcType=VARCHAR}</if>
+            <if test="password != null">AND BINARY md5_password = MD5(#{password, jdbcType=VARCHAR})</if>
+            <if test="role != null">and role = #{role, jdbcType=VARCHAR}</if>
+        </where>
+    </select>
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM user
+        <where>
+            deleted = 0
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    AND
+                </if>
+                ${ew.sqlSegment}
+            </if>
+        </where>
+    </select>
+    <insert id="insert" parameterType="org.example.entity.User" >
+        <selectKey keyProperty="userID" order="AFTER" resultType="INT" >
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO
+        user (username, nickname, password, md5_password)
+        VALUES (#{username}, #{nickname}, #{password}, MD5(#{password}))
+    </insert>
+    <update id="update" parameterType="org.example.entity.User">
+        UPDATE user
+        <set>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="password != null">md5_password = MD5(#{password}),</if>
+            <if test="role != null">role = IF(#{role}="null", NULL, #{role}),</if>
+        </set>
+        WHERE userID = #{userID, jdbcType=BIGINT} AND BINARY username = #{username} AND deleted = 0
+    </update>
+    <update id="delete" parameterType="_long">
+        UPDATE user
+        <set>
+            deleted = 1
+        </set>
+        WHERE userID = #{id} AND deleted = 0
+    </update>
+</mapper>
